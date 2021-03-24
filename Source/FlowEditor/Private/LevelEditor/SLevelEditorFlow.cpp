@@ -1,7 +1,9 @@
 #include "LevelEditor/SLevelEditorFlow.h"
 #include "FlowAsset.h"
-#include "FlowWorldSettings.h"
+#include "FlowSystemComponent.h"
 
+#include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
 #include "Editor.h"
 #include "Framework/MultiBox/MultiBoxDefs.h"
 #include "PropertyCustomizationHelpers.h"
@@ -24,9 +26,9 @@ void SLevelEditorFlow::CreateFlowWidget()
 {
 	if (UWorld* World = GEditor->GetEditorWorldContext().World())
 	{
-		if (const AFlowWorldSettings* WorldSettings = Cast<AFlowWorldSettings>(World->GetWorldSettings()))
+		if (const auto FlowSystemComponent = World->GetWorldSettings()->FindComponentByClass< UFlowSystemComponent >())
 		{
-			FlowPath = WorldSettings->FlowAsset ? FName(*WorldSettings->FlowAsset->GetPathName()) : FName();
+			FlowPath = FlowSystemComponent->GetFlowAsset() ? FName(*FlowSystemComponent->GetFlowAsset()->GetPathName()) : FName();
 		}
 	}
 
@@ -74,17 +76,10 @@ void SLevelEditorFlow::OnFlowChanged(const FAssetData& NewAsset)
 
 	if (UWorld* World = GEditor->GetEditorWorldContext().World())
 	{
-		if (AFlowWorldSettings* WorldSettings = Cast<AFlowWorldSettings>(World->GetWorldSettings()))
+		const auto WorldSettings = World->GetWorldSettings();
+		if (const auto FlowSystemComponent = WorldSettings->FindComponentByClass< UFlowSystemComponent >())
 		{
-			if (UObject* NewObject = NewAsset.GetAsset())
-			{
-				WorldSettings->FlowAsset = Cast<UFlowAsset>(NewObject);
-			}
-			else
-			{
-				WorldSettings->FlowAsset = nullptr;
-			}
-
+			FlowSystemComponent->SetFlowAsset(Cast<UFlowAsset>(NewAsset.GetAsset()));
 			WorldSettings->MarkPackageDirty();
 		}
 	}
